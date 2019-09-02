@@ -1,0 +1,10 @@
+import SCons, sys, os, glob
+ 
+Import('env')
+ 
+sys.path.append(env['ROOT'] + '/src/scons_modules/')
+ 
+import utils
+ 
+temp_env = env.Clone()
+utils.unpack_src(Dir(env.subst('$O')), env['ROOT'] + '/src/busybox-1.29.3.tar.bz2')
