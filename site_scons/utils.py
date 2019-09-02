@@ -1,7 +1,7 @@
 from SCons.Script import *
 import os
  
-unpack = Builder(action="tar xf ${SOURCE.abspath} -C ${TARGET.dir}") #, target_factory=Dir)
+unpack = Builder(action="tar xf ${SOURCE.abspath} -C ${TARGET.dir}")#, target_factory=Dir)
 # util_env = Environment(BUILDERS = { "unpack": unpack, })
  
 def unpack_src(env, dst_path, tar_file):
