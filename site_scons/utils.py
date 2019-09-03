@@ -1,7 +1,7 @@
 from SCons.Script import *
 import os
  
-unpack = Builder(action=[ "rm -rf ${TARGET.dir}", "tar xf ${SOURCE.abspath} -C ${TARGET.dir.dir}", "touch ${TARGET.abspath}" ])#, target_factory=Dir)
+unpack = Builder(action=[ "@rm -rf ${TARGET.dir}", "@tar xf ${SOURCE.abspath} -C ${TARGET.dir.dir}", "@touch ${TARGET.abspath}" ])#, target_factory=Dir)
 # util_env = Environment(BUILDERS = { "unpack": unpack, })
 
 def unpack_src(env, tar_file):
@@ -16,6 +16,7 @@ def unpack_src(env, tar_file):
 	if not len(folder):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
+	print("unpacking " + tar_file + "...")
 	r = env.unpack(dst_path + '/' + folder + '.unpacked', src_tar_path)
 	if not r:
 		raise SCons.Errors.UserError, "failed to extract %s." %tar_file_path
