@@ -3,4 +3,4 @@ import utils
 
 Import('env')
 
-utils.unpack_src(env, '$O', '#/src/busybox-1.29.3.tar.bz2')
+utils.unpack_src(env, 'busybox-1.29.3.tar.bz2')

@@ -9,7 +9,8 @@ env = Environment(T="#/output/$flavor/binaries",
                   O="#/output/$flavor/objects",
                   ENV={'PATH': path},
                   flavor="debug",
-                  ROOT='#')
+                  ROOT='#',
+                  SRCS_FOLDER='#/src')
 
 env.Append(BUILDERS = {'unpack':utils.unpack})
 
