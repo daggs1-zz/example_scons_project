@@ -1,0 +1,11 @@
+--- libbb/appletlib.c	2019-09-04 09:36:49.145810961 +0300
++++ libbb/appletlib.c	2019-09-04 09:36:54.993888743 +0300
+@@ -798,7 +798,7 @@ int busybox_main(int argc UNUSED_PARAM,
+ 		full_write2_str(bb_banner); /* reuse const string */
+ 		full_write2_str(" multi-call binary.\n"); /* reuse */
+ 		full_write2_str(
+-			"BusyBox is copyrighted by many authors between 1998-2015.\n"
++			"BusyBox test is copyrighted by many authors between 1998-2015.\n"
+ 			"Licensed under GPLv2. See source distribution for detailed\n"
+ 			"copyright notices.\n"
+ 			"\n"
