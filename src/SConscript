@@ -16,7 +16,7 @@ stages = [
 	  #(dir.abspath + '/installed', utils.install)
 	 ]
 
-prev = Dir(env.subst('$O'))
+prev = None
 
 for stage in stages:
 	(target, func) = stage
