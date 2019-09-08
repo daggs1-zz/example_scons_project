@@ -1,7 +1,7 @@
 from SCons.Script import *
 import os, glob
  
-unpack_builder = Builder(action=[ "@echo unpacking `echo ${SOURCE.filebase} | sed 's/\.[^.]*$//;s/-/ \(version /g'`\)...", "@rm -rf ${TARGET}", "@tar xf ${SOURCE.abspath} -C ${TARGET.dir}", "mkdir ${TARGET}/.scons_build_stages" ])
+unpack_builder = Builder(action=[ "@echo unpacking `echo ${SOURCE.filebase} | sed 's/\.[^.]*$//;s/-/ \(version /g'`\)...", "@rm -rf ${TARGET}", "@tar xf ${SOURCE.abspath} -C ${TARGET.dir}" ])
 
 
 def get_stages_folder_name():
