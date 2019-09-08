@@ -3,6 +3,7 @@ import os, glob
  
 unpack_builder = Builder(action=[ "@echo unpacking `echo ${SOURCE.filebase} | sed 's/\.[^.]*$//;s/-/ \(version /g'`\)...", "@rm -rf ${TARGET}", "@tar xf ${SOURCE.abspath} -C ${TARGET.dir}" ])
 
+patch_builder = Builder(action=[ "@echo applying ${SOURCE.filebase}...", "@patch -p0 -i ${SOURCE.abspath} -d ${TARGET.dir}" ])
 
 def get_stages_folder_name():
 	return '.scons_build_stages'
@@ -26,7 +27,13 @@ def unpack(env, pkg_name):
 		raise SCons.Errors.UserError, "failed to extract %s." %File(env['src_tar_path']).abspath
 
 def patch(env, pkg_name):
-	raise SCons.Errors.UserError, "unimplemented"
+	patches = sorted(glob.glob(Dir(env['PATCHES_FOLDER']).abspath + '/' + pkg_name + '/*.patch'))
+
+	if patches:
+		for patch in patches:
+			r = env.patch(File(env['unpacked_path'] + '/' + File(patch).name), patch)
+			if not r:
+				raise SCons.Errors.UserError, "failed to extract %s." %tar_file_path
 
 def prepare(env, pkg_name):
 	raise SCons.Errors.UserError, "unimplemented"
@@ -38,4 +45,4 @@ def install(env, pkg_name):
 	raise SCons.Errors.UserError, "unimplemented"
 
 def init_utils_env(env):
-    return env.Clone(BUILDERS = {'unpack' : unpack_builder})
+    return env.Clone(BUILDERS = {'unpack' : unpack_builder, 'patch' : patch_builder})

@@ -10,7 +10,7 @@ dir = Dir(utils_env['unpacked_path'] + '/' + utils.get_stages_folder_name())
 
 stages = [
 	  (dir.abspath + '/unpacked', utils.unpack), 
-	  #(dir.abspath + '/patched', utils.patch),
+	  (dir.abspath + '/patched', utils.patch),
 	  #(dir.abspath + '/prepared', utils.prepare),
 	  #(dir.abspath + '/compiled', utils.compile),
 	  #(dir.abspath + '/installed', utils.install)

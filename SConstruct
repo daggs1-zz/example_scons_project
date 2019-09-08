@@ -10,7 +10,7 @@ env = Environment(T="#/output/$flavor/binaries",
 		  ENV={'PATH': path},
 		  flavor="debug",
 		  ROOT='#',
-		  SRCS_FOLDER='#/src')
+		  SRCS_FOLDER='#/src', PATCHES_FOLDER='#/src/patches')
 
 SConscript('src/SConscript', variant_dir="$O",
 	   duplicate=0, exports='env')
