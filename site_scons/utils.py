@@ -1,7 +1,7 @@
 from SCons.Script import *
 import os, glob
  
-src_unpack = Builder(action=[ "@echo unpacking `echo ${SOURCE.filebase} | sed 's/\.[^.]*$//;s/-/ \(version /g'`\)...", "@rm -rf ${TARGET}", "@tar xf ${SOURCE.abspath} -C ${TARGET.dir}", "mkdir ${TARGET}/.scons_build_stages" ])
+unpack_builder = Builder(action=[ "@echo unpacking `echo ${SOURCE.filebase} | sed 's/\.[^.]*$//;s/-/ \(version /g'`\)...", "@rm -rf ${TARGET}", "@tar xf ${SOURCE.abspath} -C ${TARGET.dir}", "mkdir ${TARGET}/.scons_build_stages" ])
 
 
 def get_stages_folder_name():
@@ -38,4 +38,4 @@ def install(env, pkg_name):
 	raise SCons.Errors.UserError, "unimplemented"
 
 def init_utils_env(env):
-    return env.Clone(BUILDERS = {'unpack' : src_unpack})
+    return env.Clone(BUILDERS = {'unpack' : unpack_builder})
