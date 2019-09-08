@@ -22,4 +22,3 @@ for stage in stages:
 	(target, func) = stage
 	utils_env.Command(target, prev, [ func(utils_env, pkg_name), Touch("${TARGET.abspath}") ])
 	prev = target
-	
