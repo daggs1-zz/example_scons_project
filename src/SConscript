@@ -5,7 +5,7 @@ Import('env')
 def load_pkg_info(pkg_name):
 	pkg_info = {}
 
-	src_tar_path = sorted(glob.glob(Dir(env['SRCS_FOLDER']).abspath + '/' + pkg_name + '-*'))[-1]
+	src_tar_path = sorted(glob.glob(Dir(utils_env.subst('$SRCS_FOLDER')).abspath + '/' + pkg_name + '-*'))[-1]
 	tar_file_path = File(src_tar_path).abspath
 	if not os.path.isfile(tar_file_path):
 		raise SCons.Errors.UserError, "%s file was not found." %tar_file_path
@@ -21,14 +21,14 @@ def load_pkg_info(pkg_name):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
 	pkg_info['tar_path'] = File(tar_file_path).abspath
-	pkg_info['patches_list'] = sorted(glob.glob(Dir(utils_env.subst('$PATCHES_FOLDER') + '/' + pkg_name + '/*.patch').abspath))
+	pkg_info['patches_list'] = sorted(glob.glob(Dir(utils_env.subst('$PATCHES_FOLDER')).abspath + '/' + pkg_name + '/*.patch'))
 	pkg_info['path_to_src'] = utils_env.subst('$O') + '/' + root_folder
 	pkg_info['make_targets'] = ""
 	pkg_info['stages_folder'] = pkg_info['path_to_src'] + '/.stages/'
 	pkg_info['scons_targets'] = {}
 	utils_env.pkgs_info[pkg_name] = pkg_info
 
-utils_env = env.Clone(tools=['default', 'Unpack', 'Patch', 'Prepare', 'Make', 'Install' ],
+utils_env = env.Clone(tools=['default', 'Unpack', 'Patch', 'Prepare', 'Make' ],
 		      PATCHES_FOLDER = env['SRCS_FOLDER'] + '/patches',
 		      CONFIGS_FOLDER = env['SRCS_FOLDER'] + '/configs')
 utils_env.AppendENVPath('DESTDIR', Dir(utils_env.subst('$T')).abspath)
@@ -59,7 +59,6 @@ pkg_info['scons_targets']['prepared'] = utils_env.Prepare(pkg_info['stages_folde
 							  pkg_info['scons_targets']['patched'],
 							  pkg_name = pkg_name,
 							  work_dir = pkg_info['path_to_src'],
-							  stages_folder = pkg_info['stages_folder'])
 
 # compile the source
 pkg_info['scons_targets']['compiled'] = utils_env.Make(pkg_info['stages_folder'] + 'compiled',
