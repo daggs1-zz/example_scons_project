@@ -8,18 +8,23 @@ def parse_args(target, source, env):
 	pkg_name = env.subst(str(env['pkg_name']))
 	dest_dir = Dir(env.subst(str(env['dest_dir']))).abspath
 	patches_list = env.subst(str(env['patches_list'])).strip('[]\'')
+	if len(patches_list):
+		patches_list = patches_list.split(',')
 
-	return (pkg_name, dest_dir, patches_list.split(','))
+	return (pkg_name, dest_dir, patches_list)
 
 def message(target, source, env):
 	(pkg_name, dest_dir, patches_path) = parse_args(target, source, env)
-	return "Patching " + pkg_name + "..."
+	if len(patches_path):
+		return "Patching " + pkg_name + "..."
+	else:
+		return ""
 
 def builder(target, source, env):
 	(pkg_name, dest_dir, patches_list) = parse_args(target, source, env)
 	ret_val = 0
 
-	if len(patches_list):
+	if patches_list:
 		for patch in patches_list:
 			print("Applying " + os.path.basename(patch) + "...")
 			cmd = "patch -p0 -i " + patch + " -d " + Dir(dest_dir).abspath
@@ -29,7 +34,9 @@ def builder(target, source, env):
 			if patch.returncode != 0:
 				ret_val = patch.returncode
 				break
-		Path(target[0].abspath).touch()
+
+	Path(target[0].abspath).touch()
+
 	return ret_val
 
 def generate(env, **kwargs):
