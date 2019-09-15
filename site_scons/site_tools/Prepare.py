@@ -18,7 +18,7 @@ def get_list_of_file_in_folder(work_dir):
 		if not os.path.isdir(abs_path):
 			files_list.append(abs_path)
 
-	return files_list
+	return sorted(files_list)
 
 def prep_kbuild_pkg(pkg_name, work_dir, env, stages_folder):
 	config = env.Command(work_dir + '/.config',
