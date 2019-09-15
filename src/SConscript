@@ -1,24 +1,77 @@
-import utils
+import SCons, os, glob, tarfile
 
 Import('env')
 
-utils_env = utils.init_utils_env(env)
+def load_pkg_info(pkg_name):
+	pkg_info = {}
+
+	src_tar_path = sorted(glob.glob(Dir(env['SRCS_FOLDER']).abspath + '/' + pkg_name + '-*'))[-1]
+	tar_file_path = File(src_tar_path).abspath
+	if not os.path.isfile(tar_file_path):
+		raise SCons.Errors.UserError, "%s file was not found." %tar_file_path
+
+	print("found src file for " + pkg_name + ": " + tar_file_path)
+
+	source_tar = tarfile.open(tar_file_path, 'r')
+	if not source_tar.getmembers()[0].isdir():
+		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
+
+	root_folder = source_tar.getmembers()[0].name
+	if not len(root_folder) or len(os.path.dirname(root_folder)):
+		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
+
+	pkg_info['tar_path'] = File(tar_file_path).abspath
+	pkg_info['patches_list'] = sorted(glob.glob(Dir(utils_env.subst('$PATCHES_FOLDER') + '/' + pkg_name + '/*.patch').abspath))
+	pkg_info['path_to_src'] = utils_env.subst('$O') + '/' + root_folder
+	pkg_info['make_targets'] = ""
+	pkg_info['stages_folder'] = pkg_info['path_to_src'] + '/.stages/'
+	pkg_info['scons_targets'] = {}
+	utils_env.pkgs_info[pkg_name] = pkg_info
+
+utils_env = env.Clone(tools=['default', 'Unpack', 'Patch', 'Prepare', 'Make', 'Install' ],
+		      PATCHES_FOLDER = env['SRCS_FOLDER'] + '/patches',
+		      CONFIGS_FOLDER = env['SRCS_FOLDER'] + '/configs')
+utils_env.AppendENVPath('DESTDIR', Dir(utils_env.subst('$T')).abspath)
+utils_env.pkgs_info = {}
 
 pkg_name = 'busybox'
-utils.prepare_env(utils_env, pkg_name)
-dir = Dir(utils_env['unpacked_path'] + '/' + utils.get_stages_folder_name())
 
-stages = [
-	  (dir.abspath + '/unpacked', utils.unpack), 
-	  (dir.abspath + '/patched', utils.patch),
-	  #(dir.abspath + '/prepared', utils.prepare),
-	  #(dir.abspath + '/compiled', utils.compile),
-	  #(dir.abspath + '/installed', utils.install)
-	 ]
+# Prepare the pkg's info
+load_pkg_info(pkg_name)
 
-prev = None
+pkg_info = utils_env.pkgs_info[pkg_name]
 
-for stage in stages:
-	(target, func) = stage
-	utils_env.Command(target, prev, [ func(utils_env, pkg_name), Touch("${TARGET.abspath}") ])
-	prev = target
+# unpack the tar file
+pkg_info['scons_targets']['unpacked'] = utils_env.Unpack(pkg_info['stages_folder'] + 'unpacked',
+							 pkg_info['tar_path'],
+							 pkg_name = pkg_name,
+							 dest_dir = utils_env.subst('$O'))
+
+# patch the source if needed
+pkg_info['scons_targets']['patched'] = utils_env.Patch(pkg_info['stages_folder'] + 'patched',
+						       pkg_info['scons_targets']['unpacked'],
+						       pkg_name = pkg_name,
+						       dest_dir = pkg_info['path_to_src'],
+						       patches_list = pkg_info['patches_list'])
+
+# prepare the source for compilation
+pkg_info['scons_targets']['prepared'] = utils_env.Prepare(pkg_info['stages_folder'] + 'prepared',
+							  pkg_info['scons_targets']['patched'],
+							  pkg_name = pkg_name,
+							  work_dir = pkg_info['path_to_src'],
+							  stages_folder = pkg_info['stages_folder'])
+
+# compile the source
+pkg_info['scons_targets']['compiled'] = utils_env.Make(pkg_info['stages_folder'] + 'compiled',
+						       pkg_info['scons_targets']['prepared'],
+						       pkg_name = pkg_name,
+						       work_dir = pkg_info['path_to_src'],
+						       make_targets = pkg_info['make_targets'])
+
+# install the result binaries
+pkg_info['scons_targets']['installed'] = utils_env.Make(pkg_info['stages_folder'] + 'installed',
+							pkg_info['scons_targets']['compiled'],
+							pkg_name = pkg_name,
+							work_dir = pkg_info['path_to_src'],
+							dest_dir = Dir(utils_env.subst('$T')).abspath,
+							install = True)

@@ -1,16 +1,16 @@
-import os
-import utils
+import os, multiprocessing
 
 # define std pathes
 path = ['/usr/local/sbin', '/usr/local/bin',
 	'/usr/sbin', '/usr/bin', '/sbin', '/bin']
 
-env = Environment(T="#/output/$flavor/binaries",
-		  O="#/output/$flavor/objects",
+SetOption('num_jobs', multiprocessing.cpu_count() + 1)
+
+env = Environment(T="#/output/$flavor/target",
+		  O="#/output/$flavor/build",
 		  ENV={'PATH': path},
 		  flavor="debug",
-		  ROOT='#',
-		  SRCS_FOLDER='#/src', PATCHES_FOLDER='#/src/patches')
+		  ROOT='#', SRCS_FOLDER='#/src')
 
 SConscript('src/SConscript', variant_dir="$O",
 	   duplicate=0, exports='env')
