@@ -4,21 +4,11 @@ from pathlib2 import Path
 from os import path
 from enum import IntEnum
 from SCons.Script import *
+import fnmatch, re
 
 class build_type(IntEnum):
 	KBUILD = 0
 	UNSUPPORTED = 1
-
-def get_list_of_file_in_folder(work_dir):
-	folder_content = os.listdir(work_dir)
-	files_list = list()
-
-	for entry in folder_content:
-		abs_path = os.path.join(work_dir, entry)
-		if not os.path.isdir(abs_path):
-			files_list.append(abs_path)
-
-	return sorted(files_list)
 
 def prep_kbuild_pkg(pkg_name, work_dir, env, stages_folder):
 	config = env.Command(work_dir + '/.config',
@@ -30,6 +20,21 @@ def prep_kbuild_pkg(pkg_name, work_dir, env, stages_folder):
 				 single_job = True, implicit = True, make_targets = 'oldconfig')
 
 	return [ config, run_oldconfig ]
+
+build_types_handlers = [ (prep_kbuild_pkg, "(Config(|\..*)|Kconfig(|\..*))") ]
+
+def get_all_regex():
+	output = ""
+
+	for type in build_type:
+		if type == build_type.UNSUPPORTED:
+			break
+		output += build_types_handlers[int(type)][1] + '|'
+
+	if len(output) > 1:
+		output = output[:-1]
+
+	return output
 
 def parse_args(target, source, env):
 	pkg_name = env.subst(str(env['pkg_name']))
@@ -47,21 +52,24 @@ def message(target, source, env):
 
 def builder(target, source, env):
 	(pkg_name, work_dir, stages_folder) = parse_args(target, source, env)
-	files_list = get_list_of_file_in_folder(Dir(work_dir).abspath)
+	fmt = get_all_regex()
+	files_list = sorted([f for f in os.listdir(Dir(work_dir).abspath) if re.match(r'^' + fmt + '$', f)])
 	b_type = build_type.UNSUPPORTED
 	ret_val = 1
-	cbs = [ prep_kbuild_pkg ]
 
 	for file in files_list:
-		fn = path.basename(file)
-		if fn.startswith("Config.") or fn == "Config" or fn.startswith("Kconfig.") or fn == "Kconfig":
-			b_type = build_type.KBUILD
-			break
+		for type in build_type:
+			if type == build_type.UNSUPPORTED:
+				break
+
+			if re.match(r'^' + build_types_handlers[int(type)][1]  + '$', file):
+				b_type = type
+				break
 
 	if b_type == build_type.UNSUPPORTED:
 		print("unspported build type")
 	else:
-		deps = cbs[int(b_type)](pkg_name, work_dir, env, stages_folder)
+		deps = build_types_handlers[int(b_type)][0](pkg_name, work_dir, env, stages_folder)
 		Path(target[0].abspath).touch()
 		target = deps + target
 
