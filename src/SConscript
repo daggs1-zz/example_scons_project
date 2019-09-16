@@ -59,6 +59,7 @@ pkg_info['scons_targets']['prepared'] = utils_env.Prepare(pkg_info['stages_folde
 							  pkg_info['scons_targets']['patched'],
 							  pkg_name = pkg_name,
 							  work_dir = pkg_info['path_to_src'],
+							  stages_folder = pkg_info['stages_folder'])
 
 # compile the source
 pkg_info['scons_targets']['compiled'] = utils_env.Make(pkg_info['stages_folder'] + 'compiled',
