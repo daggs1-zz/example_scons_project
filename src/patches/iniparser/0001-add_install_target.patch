@@ -1,0 +1,12 @@
+--- Makefile	2019-09-17 23:29:12.000000000 +0300
++++ Makefile	2019-09-17 23:36:10.000000000 +0300
+@@ -60,3 +60,9 @@ docs:
+ 	
+ check:
+ 	@(cd test ; $(MAKE))
++
++install: libiniparser.a libiniparser.so
++	mkdir -p $(DESTDIR)/lib
++	mkdir -p $(DESTDIR)/include
++	cp libiniparser.a libiniparser.so*  $(DESTDIR)/lib/
++	cp src/*.h $(DESTDIR)/include/
