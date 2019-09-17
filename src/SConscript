@@ -1,6 +1,25 @@
 import SCons, os, glob, tarfile
+import re, build_type
 
 Import('env')
+
+def prep_kbuild_pkg(env, pkg_name, pkg_info):
+	config = env.Command(pkg_info['path_to_src'] + '/.config', pkg_info['scons_targets']['patched'],
+			     Copy("$TARGET", Dir(env.subst('$CONFIGS_FOLDER')).abspath + '/' + pkg_name + '.config'))
+
+	run_oldconfig = env.Make(Dir(pkg_info['stages_folder']).abspath + '/oldconfig', config,
+				 pkg_name = pkg_name, work_dir = pkg_info['path_to_src'],
+				 single_job = True, implicit = True, make_targets = 'oldconfig')
+
+	return run_oldconfig[0]
+
+def prep_configure_pkg(env, pkg_name, pkg_info):
+	
+	run_configure = env.Configure(Dir(pkg_info['stages_folder']).abspath + '/configure', pkg_info['scons_targets']['patched'],
+				      pkg_name = pkg_name, work_dir = pkg_info['path_to_src'], dest_dir = Dir(utils_env.subst('$O')).abspath)
+	return [ run_configure[0] ]
+
+build_types_objs = [ ("configure", prep_configure_pkg), ("(Config(|\..*)|Kconfig(|\..*))", prep_kbuild_pkg) ]
 
 def load_pkg_info(pkg_name):
 	pkg_info = {}
@@ -20,21 +39,39 @@ def load_pkg_info(pkg_name):
 	if not len(root_folder) or len(os.path.dirname(root_folder)):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
+	# we assume that no patch will change the build type.
+	pkg_info['build_type'] = build_type.type.UNSUPPORTED
+	for fn_name in source_tar.getnames():
+		for type in build_type.type:
+			if type == build_type.type.UNSUPPORTED:
+				break
+
+			if re.match(r'^' + root_folder + '/' + build_types_objs[int(type)][0] + '$', fn_name):
+				pkg_info['build_type'] = type
+				break
+		if pkg_info['build_type'] != build_type.type.UNSUPPORTED:
+			break
+
+	if pkg_info['build_type'] == build_type.type.UNSUPPORTED:
+		raise SCons.Errors.UserError, "%s has unsupported build type" %pkg_name
+
+	source_tar.close()
 	pkg_info['tar_path'] = File(tar_file_path).abspath
 	pkg_info['patches_list'] = sorted(glob.glob(Dir(utils_env.subst('$PATCHES_FOLDER')).abspath + '/' + pkg_name + '/*.patch'))
-	pkg_info['path_to_src'] = utils_env.subst('$O') + '/' + root_folder
+	pkg_info['path_to_src'] = Dir(utils_env.subst('$O') + '/' + root_folder).abspath
 	pkg_info['make_targets'] = ""
 	pkg_info['stages_folder'] = pkg_info['path_to_src'] + '/.stages/'
 	pkg_info['scons_targets'] = {}
 	utils_env.pkgs_info[pkg_name] = pkg_info
 
-utils_env = env.Clone(tools=['default', 'Unpack', 'Patch', 'Prepare', 'Make' ],
+utils_env = env.Clone(tools=['default', 'Unpack', 'Patch', 'Prepare', 'Make', 'Configure' ],
 		      PATCHES_FOLDER = env['SRCS_FOLDER'] + '/patches',
 		      CONFIGS_FOLDER = env['SRCS_FOLDER'] + '/configs')
 utils_env.AppendENVPath('DESTDIR', Dir(utils_env.subst('$T')).abspath)
 utils_env.pkgs_info = {}
 
 pkg_name = 'busybox'
+#pkg_name = 'ncurses'
 
 # Prepare the pkg's info
 load_pkg_info(pkg_name)
@@ -55,11 +92,7 @@ pkg_info['scons_targets']['patched'] = utils_env.Patch(pkg_info['stages_folder']
 						       patches_list = pkg_info['patches_list'])
 
 # prepare the source for compilation
-pkg_info['scons_targets']['prepared'] = utils_env.Prepare(pkg_info['stages_folder'] + 'prepared',
-							  pkg_info['scons_targets']['patched'],
-							  pkg_name = pkg_name,
-							  work_dir = pkg_info['path_to_src'],
-							  stages_folder = pkg_info['stages_folder'])
+pkg_info['scons_targets']['prepared'] = build_types_objs[int(pkg_info['build_type'])][1](utils_env, pkg_name, pkg_info)
 
 # compile the source
 pkg_info['scons_targets']['compiled'] = utils_env.Make(pkg_info['stages_folder'] + 'compiled',
@@ -74,4 +107,4 @@ pkg_info['scons_targets']['installed'] = utils_env.Make(pkg_info['stages_folder'
 							pkg_name = pkg_name,
 							work_dir = pkg_info['path_to_src'],
 							dest_dir = Dir(utils_env.subst('$T')).abspath,
-							install = True)
+							install = True, build_type = pkg_info['build_type'])
