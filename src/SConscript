@@ -19,7 +19,10 @@ def prep_configure_pkg(env, pkg_name, pkg_info):
 				      pkg_name = pkg_name, work_dir = pkg_info['path_to_src'], dest_dir = Dir(utils_env.subst('$O')).abspath)
 	return [ run_configure[0] ]
 
-build_types_objs = [ ("configure", prep_configure_pkg), ("(Config(|\..*)|Kconfig(|\..*))", prep_kbuild_pkg) ]
+def prep_makefile_pkg(env, pkg_name, pkg_info):
+	return [ pkg_info['scons_targets']['patched'] ]
+
+build_types_objs = [ ("configure", prep_configure_pkg), ("(Config(|\..*)|Kconfig(|\..*))", prep_kbuild_pkg), ("Makefile|makefile", prep_makefile_pkg) ]
 
 def load_pkg_info(pkg_name):
 	pkg_info = {}
@@ -36,10 +39,7 @@ def load_pkg_info(pkg_name):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
 	root_folder = source_tar.getmembers()[0].name
-	if root_folder.startswith("./"):
-		root_folder = root_folder[2:]
-
-	if not len(root_folder) or len(os.path.dirname(root_folder)):
+	if not len(root_folder) or (len(os.path.dirname(root_folder)) and not root_folder.startswith("./")):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
 	# we assume that no patch will change the build type.
