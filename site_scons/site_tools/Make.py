@@ -58,7 +58,6 @@ def builder(target, source, env):
 	cmd = 'make -j ' + str(jobs)
 
 	if install_flow:
-		print(b_type)
 		if b_type != build_type.type.CONFIGURE:
 			cmd += ' DESTDIR=\"' + dest_dir + '\"'
 		cmd += ' install'
