@@ -12,5 +12,7 @@ env = Environment(T="#/output/$flavor/target",
 		  flavor="debug",
 		  ROOT='#', SRCS_FOLDER='#/src')
 
-SConscript('src/SConscript', variant_dir="$O",
-	   duplicate=0, exports='env')
+if "src" in BUILD_TARGETS:
+	env['src_targets'] = ARGUMENTS.get('targets', 0)
+	SConscript('src/SConscript', variant_dir="$O",
+		   duplicate=0, exports='env')

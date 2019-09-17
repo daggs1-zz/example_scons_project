@@ -70,41 +70,42 @@ utils_env = env.Clone(tools=['default', 'Unpack', 'Patch', 'Prepare', 'Make', 'C
 utils_env.AppendENVPath('DESTDIR', Dir(utils_env.subst('$T')).abspath)
 utils_env.pkgs_info = {}
 
-pkg_name = 'busybox'
-#pkg_name = 'ncurses'
+for t in env['src_targets'].split(','):
+	pkg_name = os.path.basename(t)
 
-# Prepare the pkg's info
-load_pkg_info(pkg_name)
+	# Prepare the pkg's info
+	load_pkg_info(pkg_name)
 
-pkg_info = utils_env.pkgs_info[pkg_name]
+	pkg_info = utils_env.pkgs_info[pkg_name]
 
-# unpack the tar file
-pkg_info['scons_targets']['unpacked'] = utils_env.Unpack(pkg_info['stages_folder'] + 'unpacked',
-							 pkg_info['tar_path'],
-							 pkg_name = pkg_name,
-							 dest_dir = utils_env.subst('$O'))
+	# unpack the tar file
+	pkg_info['scons_targets']['unpacked'] = utils_env.Unpack(pkg_info['stages_folder'] + 'unpacked',
+								 pkg_info['tar_path'],
+								 pkg_name = pkg_name,
+								 dest_dir = utils_env.subst('$O'))
 
-# patch the source if needed
-pkg_info['scons_targets']['patched'] = utils_env.Patch(pkg_info['stages_folder'] + 'patched',
-						       pkg_info['scons_targets']['unpacked'],
-						       pkg_name = pkg_name,
-						       dest_dir = pkg_info['path_to_src'],
-						       patches_list = pkg_info['patches_list'])
+	# patch the source if needed
+	pkg_info['scons_targets']['patched'] = utils_env.Patch(pkg_info['stages_folder'] + 'patched',
+							      pkg_info['scons_targets']['unpacked'],
+							      pkg_name = pkg_name,
+							      dest_dir = pkg_info['path_to_src'],
+							      patches_list = pkg_info['patches_list'])
 
-# prepare the source for compilation
-pkg_info['scons_targets']['prepared'] = build_types_objs[int(pkg_info['build_type'])][1](utils_env, pkg_name, pkg_info)
+	# prepare the source for compilation
+	pkg_info['scons_targets']['prepared'] = build_types_objs[int(pkg_info['build_type'])][1](utils_env, pkg_name, pkg_info)
 
-# compile the source
-pkg_info['scons_targets']['compiled'] = utils_env.Make(pkg_info['stages_folder'] + 'compiled',
-						       pkg_info['scons_targets']['prepared'],
-						       pkg_name = pkg_name,
-						       work_dir = pkg_info['path_to_src'],
-						       make_targets = pkg_info['make_targets'])
+	# compile the source
+	pkg_info['scons_targets']['compiled'] = utils_env.Make(pkg_info['stages_folder'] + 'compiled',
+							       pkg_info['scons_targets']['prepared'],
+							       pkg_name = pkg_name,
+							       work_dir = pkg_info['path_to_src'],
+							       make_targets = pkg_info['make_targets'])
 
-# install the result binaries
-pkg_info['scons_targets']['installed'] = utils_env.Make(pkg_info['stages_folder'] + 'installed',
-							pkg_info['scons_targets']['compiled'],
-							pkg_name = pkg_name,
-							work_dir = pkg_info['path_to_src'],
-							dest_dir = Dir(utils_env.subst('$T')).abspath,
-							install = True, build_type = pkg_info['build_type'])
+	# install the result binaries
+	pkg_info['scons_targets']['installed'] = utils_env.Make(pkg_info['stages_folder'] + 'installed',
+								pkg_info['scons_targets']['compiled'],
+								pkg_name = pkg_name,
+								work_dir = pkg_info['path_to_src'],
+								dest_dir = Dir(utils_env.subst('$T')).abspath,
+								install = True, build_type = pkg_info['build_type'])
+	SCons.Script._Add_Targets(pkg_info['scons_targets']['installed'])
