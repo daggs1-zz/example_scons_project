@@ -36,6 +36,9 @@ def load_pkg_info(pkg_name):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
 	root_folder = source_tar.getmembers()[0].name
+	if root_folder.startswith("./"):
+		root_folder = root_folder[2:]
+
 	if not len(root_folder) or len(os.path.dirname(root_folder)):
 		raise SCons.Errors.UserError, "%s is invalid." %tar_file_path
 
