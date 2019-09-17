@@ -5,4 +5,5 @@ from enum import IntEnum
 class type(IntEnum):
 	CONFIGURE = 0
 	KBUILD = 1
-	UNSUPPORTED = 2
+	MAKEFILE = 2
+	UNSUPPORTED = 3
